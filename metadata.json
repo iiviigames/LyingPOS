@@ -1,0 +1,6 @@
+{
+  "name": "Lying Piece of Shit",
+  "description": "A real-time multiplayer card game of deception, quick reactions, and calling out bluffs. Play with friends across the world with live synchronization and quick-reaction slap mechanics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
