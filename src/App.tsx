@@ -56,9 +56,24 @@ export default function App() {
     setConnecting(true);
     setError(null);
 
-    // Determine secure or unsecure WebSocket URL based on current host
+    // Determine secure or unsecure WebSocket URL with fallback for external hosting (e.g., GitHub Pages)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    let wsUrl = '';
+
+    if (import.meta.env.VITE_WS_URL) {
+      wsUrl = import.meta.env.VITE_WS_URL;
+    } else {
+      const hostname = window.location.hostname;
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      const isCloudRun = hostname.endsWith('.run.app');
+
+      if (!isLocalhost && !isCloudRun) {
+        // Fallback to the live deployed Google Cloud Run production server when hosted on GitHub Pages
+        wsUrl = 'wss://ais-pre-h344mpng2swgs6has63slb-387021431209.us-east1.run.app/ws';
+      } else {
+        wsUrl = `${protocol}//${window.location.host}/ws`;
+      }
+    }
 
     const socket = new WebSocket(wsUrl);
     wsRef.current = socket;
