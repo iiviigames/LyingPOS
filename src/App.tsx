@@ -19,6 +19,22 @@ export default function App() {
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<boolean>(false);
+  const [customWsUrl, setCustomWsUrl] = useState<string>(() => {
+    return localStorage.getItem('lpos_custom_ws_url') || '';
+  });
+
+  const handleSetCustomWsUrl = (url: string) => {
+    setCustomWsUrl(url);
+    if (url) {
+      localStorage.setItem('lpos_custom_ws_url', url);
+    } else {
+      localStorage.removeItem('lpos_custom_ws_url');
+    }
+    // Close existing connection if any, so it connects to the newly configured URL
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+  };
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -60,7 +76,9 @@ export default function App() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     let wsUrl = '';
 
-    if (import.meta.env.VITE_WS_URL) {
+    if (customWsUrl) {
+      wsUrl = customWsUrl;
+    } else if (import.meta.env.VITE_WS_URL) {
       wsUrl = import.meta.env.VITE_WS_URL;
     } else {
       const hostname = window.location.hostname;
@@ -347,6 +365,8 @@ export default function App() {
             onRemovePlayer={handleRemovePlayer}
             onStartGame={handleStartGame}
             error={error}
+            customWsUrl={customWsUrl}
+            setCustomWsUrl={handleSetCustomWsUrl}
           />
         ) : (
           <GameView

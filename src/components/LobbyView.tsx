@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Player } from '../types';
 import { motion } from 'motion/react';
-import { Users, Bot, Crown, ArrowRight, Play, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { Users, Bot, Crown, ArrowRight, Play, Plus, Trash2, HelpCircle, Settings, Globe } from 'lucide-react';
 
 interface LobbyViewProps {
   playerName: string;
@@ -17,6 +17,8 @@ interface LobbyViewProps {
   onRemovePlayer: (id: string) => void;
   onStartGame: () => void;
   error: string | null;
+  customWsUrl: string;
+  setCustomWsUrl: (url: string) => void;
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({
@@ -32,10 +34,14 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   onAddCpu,
   onRemovePlayer,
   onStartGame,
-  error
+  error,
+  customWsUrl,
+  setCustomWsUrl
 }) => {
   const [isJoining, setIsJoining] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showServerConfig, setShowServerConfig] = useState(false);
+  const [tempCustomUrl, setTempCustomUrl] = useState(customWsUrl);
 
   const handleJoinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +54,17 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   };
 
   const isLobbyActive = players.length > 0;
+
+  // Predefined URLs
+  const devUrl = 'wss://ais-dev-h344mpng2swgs6has63slb-387021431209.us-east1.run.app/ws';
+  const prodUrl = 'wss://ais-pre-h344mpng2swgs6has63slb-387021431209.us-east1.run.app/ws';
+
+  const getActiveServerLabel = () => {
+    if (customWsUrl === devUrl) return 'Development Sandbox';
+    if (customWsUrl === prodUrl) return 'Production Sandbox';
+    if (customWsUrl) return 'Custom Server';
+    return 'Auto-Detect (Local)';
+  };
 
   return (
     <div id="lobby-container" className="flex flex-col items-center justify-center min-h-[75vh] py-8 px-2 w-full max-w-4xl mx-auto">
@@ -289,6 +306,117 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             )}
           </div>
         </motion.div>
+      )}
+
+      {/* Dynamic Server Config - Shown only before entering room */}
+      {!isLobbyActive && (
+        <div className="w-full max-w-2xl mt-6">
+          <button 
+            type="button"
+            onClick={() => setShowServerConfig(!showServerConfig)}
+            className="w-full flex items-center justify-between gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors bg-[#111] py-3.5 px-4 border-l-4 border-yellow-500"
+          >
+            <span className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-yellow-500" />
+              <span>SERVER: <strong className="text-yellow-400 font-extrabold">{getActiveServerLabel()}</strong></span>
+            </span>
+            <span className="text-[10px] text-zinc-500 font-mono">
+              {showServerConfig ? 'CLOSE' : 'CONFIGURE'}
+            </span>
+          </button>
+
+          {showServerConfig && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              className="bg-[#111] border border-white/5 rounded-none p-5 mt-2 space-y-4 shadow-inner border-l-4 border-yellow-500"
+            >
+              <div className="space-y-3">
+                <p className="text-[11px] text-zinc-400 leading-relaxed uppercase font-mono">
+                  If hosting on GitHub Pages, select the active backend server you want your game room to live on:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomWsUrl('');
+                      setTempCustomUrl('');
+                    }}
+                    className={`p-2.5 text-left border text-[10px] font-black uppercase tracking-wider font-mono transition-all ${
+                      !customWsUrl 
+                        ? 'bg-white text-black border-white' 
+                        : 'bg-[#0c0c0c] text-zinc-400 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    Auto-Detect
+                    <span className="block text-[8px] font-normal text-zinc-500 font-sans mt-1">
+                      Uses current website hostname.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomWsUrl(devUrl);
+                      setTempCustomUrl(devUrl);
+                    }}
+                    className={`p-2.5 text-left border text-[10px] font-black uppercase tracking-wider font-mono transition-all ${
+                      customWsUrl === devUrl 
+                        ? 'bg-red-600 text-white border-red-600' 
+                        : 'bg-[#0c0c0c] text-zinc-400 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    Dev Sandbox
+                    <span className="block text-[8px] font-normal text-zinc-500 font-sans mt-1">
+                      Active AI Studio live server.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomWsUrl(prodUrl);
+                      setTempCustomUrl(prodUrl);
+                    }}
+                    className={`p-2.5 text-left border text-[10px] font-black uppercase tracking-wider font-mono transition-all ${
+                      customWsUrl === prodUrl 
+                        ? 'bg-yellow-500 text-black border-yellow-500' 
+                        : 'bg-[#0c0c0c] text-zinc-400 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    Prod Sandbox
+                    <span className="block text-[8px] font-normal text-zinc-500 font-sans mt-1">
+                      Shared/Production Cloud Run.
+                    </span>
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-white/5">
+                  <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+                    Custom WebSocket Server URL
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={tempCustomUrl}
+                      onChange={(e) => setTempCustomUrl(e.target.value)}
+                      placeholder="wss://your-custom-backend.com/ws"
+                      className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-none px-3 py-2 text-xs text-white font-mono placeholder:text-zinc-700 focus:outline-none focus:border-yellow-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomWsUrl(tempCustomUrl)}
+                      className="bg-zinc-800 text-white hover:bg-zinc-700 font-black uppercase text-[10px] px-4 py-2 tracking-wider skew-x-[-6deg]"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
       )}
 
       {/* Toggleable Rules Accordion - Artistic Red/White styling */}
